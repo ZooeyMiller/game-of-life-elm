@@ -65,7 +65,6 @@ type alias Grid = Array (Array Cell)
 
 type alias Coordinate = (Int, Int)
 
-
 createInitialGrid : Int -> Grid
 createInitialGrid h = Array.initialize h <| always (Array.initialize h (always Alive))
 
@@ -75,7 +74,20 @@ getInGrid grid (x, y) = Maybe.andThen (Array.get y) <| Array.get x grid
 setInGrid : Coordinate -> Grid -> Cell -> Maybe Grid
 setInGrid (x, y) grid value = Array.get y grid |> Maybe.map (Array.set x value) |> Maybe.map (\v -> Array.set y v grid)
 
+findNeigbours : Int -> Int -> Grid -> List (Maybe Cell)
 findNeigbours x y grid = List.map (getInGrid grid) <| getNeigbourCoordinates x y
+
+getTotalLiveNeighbors : List (Maybe Cell) -> Int
+getTotalLiveNeighbors list = 
+  List.foldr (handleMaybeCellFold) 0 list
+
+handleMaybeCellFold : Maybe Cell -> Int -> Int
+handleMaybeCellFold maybeCell total = 
+    case maybeCell of 
+        Just cell -> case cell of
+                        Alive -> total + 1
+                        _ -> total
+        Nothing -> total
 
 getNeigbourCoordinates : Int -> Int -> List Coordinate
 getNeigbourCoordinates x y = [
