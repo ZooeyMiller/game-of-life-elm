@@ -5,14 +5,12 @@ import Html.Attributes exposing (src)
 import Array exposing (..)
 
 
-
 ---- MODEL ----
 
 
 type alias Model =
-    {
-        game: Grid,
-        running: Bool
+    { game : Grid
+    , running : Bool
     }
 
 
@@ -26,12 +24,22 @@ init =
 
 
 type Msg
-    = NoOp
+    = ToggleRunning
+    | Cycle
+    | NoOp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        ToggleRunning ->
+            ( { model | running = not model.running }, Cmd.none )
+
+        Cycle ->
+            ( { model | game = newGeneration model.game }, Cmd.none )
+
+        NoOp ->
+            ( model, Cmd.none )
 
 
 
@@ -59,44 +67,91 @@ main =
         , subscriptions = always Sub.none
         }
 
-type Cell = Alive | Dead
 
-type alias Grid = Array (Array Cell)
+type Cell
+    = Alive
+    | Dead
 
-type alias Coordinate = (Int, Int)
+
+type alias Grid =
+    Array (Array Cell)
+
+
+type alias Coordinate =
+    ( Int, Int )
+
+
+newGeneration : Grid -> Grid
+newGeneration grid =
+    Array.indexedMap (\y array -> Array.indexedMap (\x cell -> liveOrDie cell <| getTotalLiveNeighbors <| findNeigbours x y grid) array) grid
+
 
 createInitialGrid : Int -> Grid
-createInitialGrid h = Array.initialize h <| always (Array.initialize h (always Alive))
+createInitialGrid h =
+    Array.initialize h <| always (Array.initialize h (always Alive))
+
 
 getInGrid : Grid -> Coordinate -> Maybe Cell
-getInGrid grid (x, y) = Maybe.andThen (Array.get y) <| Array.get x grid
+getInGrid grid ( x, y ) =
+    Maybe.andThen (Array.get y) <| Array.get x grid
+
 
 setInGrid : Coordinate -> Grid -> Cell -> Maybe Grid
-setInGrid (x, y) grid value = Array.get y grid |> Maybe.map (Array.set x value) |> Maybe.map (\v -> Array.set y v grid)
+setInGrid ( x, y ) grid value =
+    Maybe.map (\v -> Array.set y v grid) <| Maybe.map (Array.set x value) <| Array.get y grid
+
 
 findNeigbours : Int -> Int -> Grid -> List (Maybe Cell)
-findNeigbours x y grid = List.map (getInGrid grid) <| getNeigbourCoordinates x y
+findNeigbours x y grid =
+    List.map (getInGrid grid) <| getNeigbourCoordinates x y
+
 
 getTotalLiveNeighbors : List (Maybe Cell) -> Int
-getTotalLiveNeighbors list = 
-  List.foldr (handleMaybeCellFold) 0 list
+getTotalLiveNeighbors list =
+    List.foldr (handleMaybeCellFold) 0 list
+
 
 handleMaybeCellFold : Maybe Cell -> Int -> Int
-handleMaybeCellFold maybeCell total = 
-    case maybeCell of 
-        Just cell -> case cell of
-                        Alive -> total + 1
-                        _ -> total
-        Nothing -> total
+handleMaybeCellFold maybeCell total =
+    case maybeCell of
+        Just cell ->
+            case cell of
+                Alive ->
+                    total + 1
+
+                _ ->
+                    total
+
+        Nothing ->
+            total
+
+
+liveOrDie : Cell -> Int -> Cell
+liveOrDie cell livingNeighbours =
+    case cell of
+        Alive ->
+            if livingNeighbours < 2 then
+                Dead
+            else if livingNeighbours > 3 then
+                Dead
+            else
+                Alive
+
+        Dead ->
+            if livingNeighbours == 3 then
+                Alive
+            else
+                Dead
+
 
 getNeigbourCoordinates : Int -> Int -> List Coordinate
-getNeigbourCoordinates x y = [
-    (x - 1, y - 1)
-    , (x, y - 1)
-    , (x + 1, y - 1)
-    , (x - 1, y)
-    , (x + 1, y)
-    , (x - 1, y + 1)
-    , (x, y + 1)
-    , (x + 1, y + 1)
+getNeigbourCoordinates x y =
+    [ ( x - 1, y - 1 )
+    , ( x, y - 1 )
+    , ( x + 1, y - 1 )
+    , ( x - 1, y )
+    , ( x + 1, y )
+    , ( x - 1, y + 1 )
+    , ( x, y + 1 )
+    , ( x + 1, y + 1 )
     ]
