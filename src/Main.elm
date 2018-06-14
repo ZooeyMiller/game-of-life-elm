@@ -1,7 +1,8 @@
 module Main exposing (..)
 
 import Html exposing (Html, text, div, h1, img)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Array exposing (..)
 
 
@@ -16,7 +17,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model (createInitialGrid 100) False, Cmd.none )
+    ( Model (createInitialGrid 10) False, Cmd.none )
 
 
 
@@ -26,6 +27,7 @@ init =
 type Msg
     = ToggleRunning
     | Cycle
+    | ToggleCell Int Int Cell
     | NoOp
 
 
@@ -38,6 +40,9 @@ update msg model =
         Cycle ->
             ( { model | game = newGeneration model.game }, Cmd.none )
 
+        ToggleCell x y cell ->
+            ( { model | game = Maybe.withDefault model.game (setInGrid ( x, y ) model.game (toggleAlive cell)) }, Cmd.none )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -49,9 +54,32 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
-        ]
+        (((::)
+            (renderGrid model.game)
+            ([ [ Html.button [ Html.Events.onClick Cycle ] [ text "next" ] ] ])
+         )
+            |> List.concat
+        )
+
+
+renderGrid : Array (Array Cell) -> List (Html Msg)
+renderGrid grid =
+    Array.indexedMap
+        (\y a -> (Array.indexedMap (\x cell -> div [ Html.Events.onClick (ToggleCell x y cell), Html.Attributes.style [ ( "background-color", colour cell ), ( "height", "10px" ), ( "width", "10px" ), ( "display", "inline-block" ), ( "margin", "1px" ) ] ] []) a |> Array.toList) :: [ [ Html.br [] [] ] ])
+        grid
+        |> Array.toList
+        |> List.concat
+        |> List.concat
+
+
+colour : Cell -> String
+colour cell =
+    case cell of
+        Alive ->
+            "black"
+
+        _ ->
+            "white"
 
 
 
@@ -155,3 +183,13 @@ getNeigbourCoordinates x y =
     , ( x, y + 1 )
     , ( x + 1, y + 1 )
     ]
+
+
+toggleAlive : Cell -> Cell
+toggleAlive cell =
+    case cell of
+        Alive ->
+            Dead
+
+        _ ->
+            Alive
