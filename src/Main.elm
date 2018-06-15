@@ -17,7 +17,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model (createInitialGrid 10) False, Cmd.none )
+    ( Model (createInitialGrid 20) False, Cmd.none )
 
 
 
@@ -65,7 +65,7 @@ view model =
 renderGrid : Array (Array Cell) -> List (Html Msg)
 renderGrid grid =
     Array.indexedMap
-        (\y a -> (Array.indexedMap (\x cell -> div [ Html.Events.onClick (ToggleCell x y cell), Html.Attributes.style [ ( "background-color", colour cell ), ( "height", "10px" ), ( "width", "10px" ), ( "display", "inline-block" ), ( "margin", "1px" ) ] ] []) a |> Array.toList) :: [ [ Html.br [] [] ] ])
+        (\y a -> (Array.indexedMap (\x cell -> div [ Html.Events.onClick (ToggleCell x y cell), Html.Attributes.style [ ( "background-color", colour cell ), ( "height", "10px" ), ( "width", "10px" ), ( "display", "inline-block" ), ( "margin", "1px" ), ( "border", "1px solid black" ) ] ] []) a |> Array.toList) :: [ [ Html.br [] [] ] ])
         grid
         |> Array.toList
         |> List.concat
@@ -116,12 +116,12 @@ newGeneration grid =
 
 createInitialGrid : Int -> Grid
 createInitialGrid h =
-    Array.initialize h <| always (Array.initialize h (always Alive))
+    Array.initialize h <| always (Array.initialize h (always Dead))
 
 
 getInGrid : Grid -> Coordinate -> Maybe Cell
 getInGrid grid ( x, y ) =
-    Maybe.andThen (Array.get y) <| Array.get x grid
+    Maybe.andThen (Array.get x) <| Array.get y grid
 
 
 setInGrid : Coordinate -> Grid -> Cell -> Maybe Grid
