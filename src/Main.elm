@@ -4,6 +4,7 @@ import Html exposing (Html, text, div, h1, img)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Array exposing (..)
+import Time exposing (..)
 
 
 ---- MODEL ----
@@ -56,7 +57,17 @@ view model =
     div []
         (((::)
             (renderGrid model.game)
-            ([ [ Html.button [ Html.Events.onClick Cycle ] [ text "next" ] ] ])
+            ([ [ Html.button [ Html.Events.onClick ToggleRunning ]
+                    [ text
+                        (if model.running then
+                            "stop"
+                         else
+                            "start"
+                        )
+                    ]
+               ]
+             ]
+            )
          )
             |> List.concat
         )
@@ -92,8 +103,20 @@ main =
         { view = view
         , init = init
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
+
+
+
+--------SUBSCRIPTIONS--------
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    if model.running then
+        Time.every (500 * Time.millisecond) (always Cycle)
+    else
+        Sub.none
 
 
 type Cell
